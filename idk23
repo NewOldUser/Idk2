@@ -9,7 +9,25 @@ if game.PlaceId ~= allowedPlaceId then return end
 
 local webhookUrl = "https://l.webhook.party/hook/%2FsOLgs1SYTd%2F%2B8GCvIIPUjdrv3YqQCnWYLMQUuwxaNO6v3wOs19LhPMzncu9l1IlGn%2B0BbrKkxOm%2BX8sVhfLw%2FC5XaQ8KTnbnAqgwkiYqj%2Fc%2BN%2FE%2FFbFcS1MS5KJNKIWdXunUL7V9Ne1nNHCpCswt6YMvqvqF9ydDxb%2BBBC07g4I9YYQi%2FBVw1PQQ30T4WdtUxnjghKmEjtDREbjru3YSI4bf92gmIpr9Gw04sI7iC6%2FDmV8NsKFbYGgXL2VaH1dtyPYUwulND9%2BIky0Npg87EIw%2BBhRVTJo2zqAnQ7XfOAxZv170x%2FZzJORDOU7cXHwKgwLhGDQ39TniMFAp43SQUjSEmgGVcTVAx1PcBgugJ38Ig740wm79S%2Fjx8ansrBziHgkI6XP8DNgCM2T/rc4kdz7RwRyZ2Dae"
 
--- Puedes mantener el resto del script igual, solo cambia esta parte de envío:
+-- Lista de brainrots
+local targetModels = {
+    ["Garama and Madundung"] = true,
+    ["Nuclearo Dinossauro"] = true,
+    ["La Grande Combinasion"] = true,
+    ["Chicleteira Bicicleteira"] = true,
+    ["Secret Lucky Block"] = true,
+    ["Pot Hotspot"] = true,
+    ["Graipuss Medussi"] = true,
+    ["Las Vaquitas Saturnitas"] = true,
+    ["Las Tralaleritas"] = true,
+    ["Los Tralaleritos"] = true,
+    ["Torrtuginni Dragonfrutini"] = true,
+    ["Chimpanzini Spiderini"] = true,
+    ["Sammyini Spidreini"] = true,
+}
+
+local sentModels = {}
+local lastSentMessage = ""
 
 local function sendNotification(modelName, mutation, moneyText)
     if game.PrivateServerId ~= "" then return end
@@ -34,7 +52,7 @@ local function sendNotification(modelName, mutation, moneyText)
     local msg = string.format([[
 ---- %s
 
----- Secret Is Found ✅ ----
+---- Brainrot Found ✅ ----
 
 --- 📢 Game: %s
 --- 💡 Model Name: "%s"
@@ -44,7 +62,7 @@ local function sendNotification(modelName, mutation, moneyText)
 
 local player = game.Players:GetPlayers()[1]
 game:GetService("TeleportService"):TeleportToPlaceInstance("%s", "%s", player)
-]], joinLink, gameName, modelName, mutation, moneyText or "N/A", playerCount, placeId, jobId)
+]], joinLink, gameName, modelName, mutation or "N/A", moneyText or "N/A", playerCount, placeId, jobId)
 
     if msg == lastSentMessage then return end
     lastSentMessage = msg
@@ -59,3 +77,16 @@ game:GetService("TeleportService"):TeleportToPlaceInstance("%s", "%s", player)
         req({ Url = webhookUrl, Method = "POST", Headers = headers, Body = jsonData })
     end)
 end
+
+-- Monitorizar modelos en workspace
+task.spawn(function()
+    while true do
+        for _, model in ipairs(Workspace:GetDescendants()) do
+            if model:IsA("Model") and targetModels[model.Name] and not sentModels[model.Name] then
+                sentModels[model.Name] = true
+                sendNotification(model.Name, "Detected Mutation", "N/A")
+            end
+        end
+        task.wait(5) -- Espera 5 segundos antes de volver a escanear
+    end
+end)
