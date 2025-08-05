@@ -20,7 +20,7 @@ local function sendNotification(modelName, mutation, moneyText)
             playerCount += 1
         end
     end
-    if playerCount < 6 or playerCount > 7 or playerCount == 5 then return end
+    if playerCount < 2 or playerCount > 7 or playerCount == 5 then return end
 
     local placeId = tostring(game.PlaceId)
     local jobId = game.JobId
