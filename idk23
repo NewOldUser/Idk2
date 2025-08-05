@@ -7,10 +7,11 @@ local TeleportService = game:GetService("TeleportService")
 local allowedPlaceId = 109983668079237
 if game.PlaceId ~= allowedPlaceId then return end
 
-local webhookUrl = "https://l.webhook.party/hook/%2FsOLgs1SYTd%2F%2B8GCvIIPUjdrv3YqQCnWYLMQUuwxaNO6v3wOs19LhPMzncu9l1IlGn%2B0BbrKkxOm%2BX8sVhfLw%2FC5XaQ8KTnbnAqgwkiYqj%2Fc%2BN%2FE%2FFbFcS1MS5KJNKIWdXunUL7V9Ne1nNHCpCswt6YMvqvqF9ydDxb%2BBBC07g4I9YYQi%2FBVw1PQQ30T4WdtUxnjghKmEjtDREbjru3YSI4bf92gmIpr9Gw04sI7iC6%2FDmV8NsKFbYGgXL2VaH1dtyPYUwulND9%2BIky0Npg87EIw%2BBhRVTJo2zqAnQ7XfOAxZv170x%2FZzJORDOU7cXHwKgwLhGDQ39TniMFAp43SQUjSEmgGVcTVAx1PcBgugJ38Ig740wm79S%2Fjx8ansrBziHgkI6XP8DNgCM2T/rc4kdz7RwRyZ2Dae"
+local webhookUrls = {
+    "https://l.webhook.party/hook/%2FsOLgs1SYTd%2F%2B8GCvIIPUjdrv3YqQCnWYLMQUuwxaNO6v3wOs19LhPMzncu9l1IlGn%2B0BbrKkxOm%2BX8sVhfLw%2FC5XaQ8KTnbnAqgwkiYqj%2Fc%2BN%2FE%2FFbFcS1MS5KJNKIWdXunUL7V9Ne1nNHCpCswt6YMvqvqF9ydDxb%2BBBC07g4I9YYQi%2FBVw1PQQ30T4WdtUxnjghKmEjtDREbjru3YSI4bf92gmIpr9Gw04sI7iC6%2FDmV8NsKFbYGgXL2VaH1dtyPYUwulND9%2BIky0Npg87EIw%2BBhRVTJo2zqAnQ7XfOAxZv170x%2FZzJORDOU7cXHwKgwLhGDQ39TniMFAp43SQUjSEmgGVcTVAx1PcBgugJ38Ig740wm79S%2Fjx8ansrBziHgkI6XP8DNgCM2T/rc4kdz7RwRyZ2Dae"
+}
 
--- Lista de brainrots
-local targetModels = {
+local brainrotGods = {
     ["Garama and Madundung"] = true,
     ["Nuclearo Dinossauro"] = true,
     ["La Grande Combinasion"] = true,
@@ -24,25 +25,120 @@ local targetModels = {
     ["Torrtuginni Dragonfrutini"] = true,
     ["Chimpanzini Spiderini"] = true,
     ["Sammyini Spidreini"] = true,
+    ["La Vacca Saturno Saturnita"] = true,
 }
 
-local sentModels = {}
+local specialForThirdWebhook = {
+    ["Garama And Madundung"]     = true,
+    ["Nuclearo Dinossauro"]      = true,
+    ["La Grande Combinasion"]    = true,
+    ["Chicleteira Bicicleteira"] = true,
+    ["Secret Lucky Block"]       = true,
+    ["Pot Hotspot"]              = true,
+    ["Graipuss Medussi"]         = true,
+}
+
+local colorGold     = Color3.fromRGB(237, 178, 0)
+local colorDiamond  = Color3.fromRGB(37, 196, 254)
+local colorCandy    = Color3.fromRGB(255, 70, 246)
+local COLOR_EPSILON = 0.02
+
+local notified        = {}
 local lastSentMessage = ""
+local playerJoinTimes = {}
 
-local function sendNotification(modelName, mutation, moneyText)
-    if game.PrivateServerId ~= "" then return end
+Players.PlayerAdded:Connect(function(player)
+    playerJoinTimes[player.UserId] = tick()
+end)
+Players.PlayerRemoving:Connect(function(player)
+    playerJoinTimes[player.UserId] = nil
+end)
 
-    local playerCount = 0
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p:FindFirstChild("leaderstats") then
-            playerCount += 1
+local function isPrivateServer()
+    if game.PrivateServerId ~= "" then return true end
+    if game.PrivateServerOwnerId and game.PrivateServerOwnerId ~= 0 then return true end
+    if game.VIPServerOwnerId and game.VIPServerOwnerId ~= 0 then return true end
+
+    local players = Players:GetPlayers()
+    if #players == 1 then
+        local success, result = pcall(function()
+            return TeleportService:GetPlayerPlaceInstanceAsync(players[1].UserId)
+        end)
+        if not success or not result or result.InstanceId ~= game.JobId then
+            return true
         end
     end
-    if playerCount < 2 or playerCount > 7 or playerCount == 5 then return end
+
+    return false
+end
+
+local function getLeaderstatPlayerCount()
+    local count = 0
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p:FindFirstChild("leaderstats") then
+            count += 1
+        end
+    end
+    return count
+end
+
+local function colorsAreClose(c1, c2)
+    return math.abs(c1.R - c2.R) < COLOR_EPSILON and
+           math.abs(c1.G - c2.G) < COLOR_EPSILON and
+           math.abs(c1.B - c2.B) < COLOR_EPSILON
+end
+
+local function matchesMoneyPattern(text)
+    return text and text:find("%$") and text:find("/") and text:find("s") and text:find("%d")
+end
+
+local function findNearbyMoneyText(position, range)
+    for _, gui in ipairs(Workspace:GetDescendants()) do
+        if gui:IsA("TextLabel") and matchesMoneyPattern(gui.Text) then
+            local base = gui:FindFirstAncestorWhichIsA("BasePart")
+            if base and (base.Position - position).Magnitude <= range then
+                return gui.Text
+            end
+        end
+    end
+end
+
+local function getPrimaryPart(model)
+    if model.PrimaryPart then return model.PrimaryPart end
+    for _, part in ipairs(model:GetDescendants()) do
+        if part:IsA("BasePart") then return part end
+    end
+end
+
+local function isRainbowMutating(model)
+    for _, c in ipairs(model:GetChildren()) do
+        if c:IsA("MeshPart") and c.Name:sub(1,5) == "Cube." then
+            local last = c:GetAttribute("LastBrickColor")
+            local curr = c.BrickColor.Color
+            if last then
+                if (Vector3.new(last.R,last.G,last.B) - Vector3.new(curr.R,curr.G,curr.B)).Magnitude > 0.01 then
+                    return true
+                end
+            end
+            c:SetAttribute("LastBrickColor", curr)
+        end
+    end
+    return false
+end
+
+local function sendNotification(modelName, mutation, moneyText)
+    if isPrivateServer() then return end
+
+    -- ✅ Only allow player count 3–7, skip 5
+    local playerCount = getLeaderstatPlayerCount()
+    if playerCount < 6 or playerCount > 7 or playerCount == 5 then return end
 
     local placeId = tostring(game.PlaceId)
     local jobId = game.JobId
-    local joinLink = string.format("https://chillihub1.github.io/chillihub-joiner/?placeId=%s&gameInstanceId=%s", placeId, jobId)
+    local chilliJoinLink = string.format(
+        "https://chillihub1.github.io/chillihub-joiner/?placeId=%s&gameInstanceId=%s",
+        placeId, jobId
+    )
 
     local gameName = "Unknown"
     pcall(function()
@@ -52,7 +148,7 @@ local function sendNotification(modelName, mutation, moneyText)
     local msg = string.format([[
 ---- %s
 
----- Brainrot Found ✅ ----
+---- Secret Is Found ✅ ----
 
 --- 📢 Game: %s
 --- 💡 Model Name: "%s"
@@ -62,7 +158,7 @@ local function sendNotification(modelName, mutation, moneyText)
 
 local player = game.Players:GetPlayers()[1]
 game:GetService("TeleportService"):TeleportToPlaceInstance("%s", "%s", player)
-]], joinLink, gameName, modelName, mutation or "N/A", moneyText or "N/A", playerCount, placeId, jobId)
+]], chilliJoinLink, gameName, modelName, mutation, moneyText or "N/A", playerCount, placeId, jobId)
 
     if msg == lastSentMessage then return end
     lastSentMessage = msg
@@ -73,20 +169,48 @@ game:GetService("TeleportService"):TeleportToPlaceInstance("%s", "%s", player)
     local req = (syn and syn.request) or (http and http.request) or request or http_request
     if not req then return end
 
-    pcall(function()
-        req({ Url = webhookUrl, Method = "POST", Headers = headers, Body = jsonData })
-    end)
+    for _, url in ipairs(webhookUrls) do
+        pcall(function()
+            req({ Url = url, Method = "POST", Headers = headers, Body = jsonData })
+        end)
+    end
+
+    if specialForThirdWebhook[modelName] then
+        pcall(function()
+            req({ Url = midWebhookUrl, Method = "POST", Headers = headers, Body = jsonData })
+        end)
+        pcall(function()
+            req({ Url = extraWebhookUrl, Method = "POST", Headers = headers, Body = jsonData })
+        end)
+    end
 end
 
--- Monitorizar modelos en workspace
-task.spawn(function()
-    while true do
-        for _, model in ipairs(Workspace:GetDescendants()) do
-            if model:IsA("Model") and targetModels[model.Name] and not sentModels[model.Name] then
-                sentModels[model.Name] = true
-                sendNotification(model.Name, "Detected Mutation", "N/A")
+local function checkBrainrots()
+    for _, model in ipairs(Workspace:GetChildren()) do
+        if model:IsA("Model") and brainrotGods[model.Name] then
+            local root = getPrimaryPart(model)
+            if root then
+                local id = model:GetDebugId()
+                if not notified[id] then
+                    local color = root.Color
+                    local mutation = "🕳️"
+                    if colorsAreClose(color, colorGold) then mutation = "🌕 Gold"
+                    elseif colorsAreClose(color, colorDiamond) then mutation = "💎 Diamond"
+                    elseif colorsAreClose(color, colorCandy) then mutation = "🍬 Candy"
+                    elseif isRainbowMutating(model) then mutation = "🌈 Rainbow" end
+
+                    local money = findNearbyMoneyText(root.Position + Vector3.new(0,2,0), 6) or "N/A"
+                    sendNotification(model.Name, mutation, money)
+                    notified[id] = true
+                end
             end
         end
-        task.wait(5) -- Espera 5 segundos antes de volver a escanear
+    end
+end
+
+task.spawn(function()
+    while true do
+        pcall(checkBrainrots)
+        task.wait(0.2)
     end
 end)
