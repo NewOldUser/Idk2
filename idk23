@@ -9,8 +9,11 @@ if game.PlaceId ~= allowedPlaceId then return end
 
 local webhookUrls = {
     "https://l.webhook.party/hook/%2FsOLgs1SYTd%2F%2B8GCvIIPUjdrv3YqQCnWYLMQUuwxaNO6v3wOs19LhPMzncu9l1IlGn%2B0BbrKkxOm%2BX8sVhfLw%2FC5XaQ8KTnbnAqgwkiYqj%2Fc%2BN%2FE%2FFbFcS1MS5KJNKIWdXunUL7V9Ne1nNHCpCswt6YMvqvqF9ydDxb%2BBBC07g4I9YYQi%2FBVw1PQQ30T4WdtUxnjghKmEjtDREbjru3YSI4bf92gmIpr9Gw04sI7iC6%2FDmV8NsKFbYGgXL2VaH1dtyPYUwulND9%2BIky0Npg87EIw%2BBhRVTJo2zqAnQ7XfOAxZv170x%2FZzJORDOU7cXHwKgwLhGDQ39TniMFAp43SQUjSEmgGVcTVAx1PcBgugJ38Ig740wm79S%2Fjx8ansrBziHgkI6XP8DNgCM2T/rc4kdz7RwRyZ2Dae"
+    
 }
+local extraWebhookUrl = ""
 
+local midWebhookUrl = ""
 local brainrotGods = {
     ["Garama and Madundung"] = true,
     ["Nuclearo Dinossauro"] = true,
@@ -23,8 +26,8 @@ local brainrotGods = {
     ["Las Tralaleritas"] = true,
     ["Los Tralaleritos"] = true,
     ["Torrtuginni Dragonfrutini"] = true,
+    ["Chimpanzini Spiderini"] = true,
     ["Sammyini Spidreini"] = true,
-    ["La Vacca Saturno Saturnita"] = true,
 }
 
 local specialForThirdWebhook = {
