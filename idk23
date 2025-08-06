@@ -29,6 +29,8 @@ local brainrotGods = {
     ["Chimpanzini Spiderini"] = true,
     ["Sammyini Spidreini"] = true,
     ["La Vacca Saturno Saturnita"] = true,
+    ["Rhino Toasterino"] = true,
+
 }
 
 local specialForThirdWebhook = {
