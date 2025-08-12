@@ -26,10 +26,8 @@ local brainrotGods = {
     ["Las Tralaleritas"] = true,
     ["Los Tralaleritos"] = true,
     ["Torrtuginni Dragonfrutini"] = true,
-    ["Chimpanzini Spiderini"] = true,
-    ["Sammyini Spidreini"] = true,
     ["La Vacca Saturno Saturnita"] = true,
-    ["Rhino Toasterino"] = true,
+   
 
 }
 
